@@ -75,6 +75,11 @@
   .mini .v{font-size:1.12rem;font-weight:750;margin-top:5px;font-variant-numeric:tabular-nums;}
   .mini .q{font-size:.7rem;color:var(--ink-3);margin-top:2px;}
   .grupo-h{font-size:.74rem;font-weight:700;margin:16px 0 8px;text-transform:uppercase;letter-spacing:.5px;}
+  .prev{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:12px;padding:14px 16px;border-radius:12px;background:linear-gradient(135deg,rgba(91,140,255,.12),rgba(63,111,240,.04));border:1px solid rgba(91,140,255,.28);flex-wrap:wrap;}
+  .prev small{color:var(--ink-2);font-size:.66rem;text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;}
+  .prev-v{font-size:1.3rem;font-weight:750;margin-top:3px;font-variant-numeric:tabular-nums;}
+  .prev .q{font-size:.72rem;color:var(--ink-3);margin-top:3px;}
+  .prev-side{text-align:right;}
 
   /* Colors */
   .verde{color:var(--pos);} .vermelho{color:var(--neg);} .azul{color:var(--brand);} .amarelo{color:var(--warn);}
@@ -214,6 +219,17 @@
         <div class="mini m-pos"><small>Já pago no mês</small><div class="v verde" id="s-pago">R$ 0,00</div><div class="q" id="s-pago-q">0 conta(s)</div></div>
         <div class="mini m-warn"><small>A pagar no mês</small><div class="v amarelo" id="s-apagar">R$ 0,00</div><div class="q" id="s-apagar-q">0 conta(s)</div></div>
         <div class="mini m-neg"><small>Atrasadas (meses ant.)</small><div class="v vermelho" id="s-atras">R$ 0,00</div><div class="q" id="s-atras-q">0 conta(s)</div></div>
+      </div>
+      <div class="prev">
+        <div>
+          <small>Total de despesas do mês (previsto)</small>
+          <div class="prev-v vermelho" id="p-total">R$ 0,00</div>
+          <div class="q" id="p-detalhe">pago R$ 0,00 · a vencer R$ 0,00</div>
+        </div>
+        <div class="prev-side">
+          <small>Saldo previsto do mês</small>
+          <div class="prev-v azul" id="p-saldo">R$ 0,00</div>
+        </div>
       </div>
       <div id="listaSituacao" style="margin-top:14px;"></div>
       <div class="vazio" id="situacaoVazio">Nenhuma conta a acompanhar ainda. Cadastre contas fixas ou parceladas. 👍</div>
@@ -435,6 +451,18 @@
     document.getElementById('s-apagar-q').textContent=aPagar.length+' conta(s)';
     document.getElementById('s-atras').textContent=brl(soma(atrasadas));
     document.getElementById('s-atras-q').textContent=atrasadas.length+' conta(s)';
+
+    // Previsão do mês: total de despesas do mês (dia a dia + fixas + parcelas), mesmo o que ainda não venceu
+    const mesAtual=mesDe(hojeISO());
+    let receitasMes=0, despDiaMes=0;
+    dados.lancamentos.forEach(l=>{ if(mesDe(l.data)===mesAtual){ if(l.tipo==='receita') receitasMes+=l.valor; else despDiaMes+=l.valor; } });
+    const pagoMes=despDiaMes+soma(pagas);   // já saiu no mês (dia a dia + contas pagas)
+    const aVencer=soma(aPagar);              // ainda vai vencer no mês
+    const totalPrevisto=pagoMes+aVencer;
+    const saldoPrevisto=receitasMes-totalPrevisto;
+    document.getElementById('p-total').textContent=brl(totalPrevisto);
+    document.getElementById('p-detalhe').textContent='pago '+brl(pagoMes)+' · a vencer '+brl(aVencer);
+    const ps=document.getElementById('p-saldo'); ps.textContent=brl(saldoPrevisto); ps.className='prev-v '+(saldoPrevisto>=0?'azul':'vermelho');
 
     const hoje=hojeISO();
     const wrap=document.getElementById('listaSituacao'), vazio=document.getElementById('situacaoVazio');
