@@ -376,8 +376,8 @@
   function todosOsMeses(){
     const set=new Set();
     dados.lancamentos.forEach(l=>set.add(mesDe(l.data)));
-    dados.contas.forEach(c=>c.parcelas.forEach(p=>{ if(p.pago) set.add(mesDe(p.vencimento)); }));
-    dados.fixas.forEach(f=>Object.keys(f.pagamentos||{}).forEach(m=>set.add(m)));
+    dados.contas.forEach(c=>c.parcelas.forEach(p=>{ if(p.pago) set.add(maxMes(mesDe(p.vencimento), mesDe(p.pagoEm||p.vencimento))); }));
+    dados.fixas.forEach(f=>Object.entries(f.pagamentos||{}).forEach(([ref,pg])=>set.add(maxMes(ref,(pg&&pg.data)?mesDe(pg.data):ref))));
     set.add(mesDe(hojeISO()));
     return [...set].sort().reverse();
   }
@@ -399,10 +399,11 @@
       else { despesas+=l.valor; porCat[l.categoria]=(porCat[l.categoria]||0)+l.valor; }
     });
     dados.contas.forEach(c=>c.parcelas.forEach(p=>{
-      if(p.pago&&(filtro==='todos'||mesDe(p.vencimento)===filtro)){ despesas+=p.valor; porCat[c.categoria]=(porCat[c.categoria]||0)+p.valor; }
+      if(p.pago){ const mAttr=maxMes(mesDe(p.vencimento), mesDe(p.pagoEm||p.vencimento)); if(filtro==='todos'||mAttr===filtro){ despesas+=p.valor; porCat[c.categoria]=(porCat[c.categoria]||0)+p.valor; } }
     }));
-    dados.fixas.forEach(f=>Object.entries(f.pagamentos||{}).forEach(([mes,pg])=>{
-      if(filtro==='todos'||mes===filtro){ const v=(pg&&pg.valor!=null)?pg.valor:f.valor; despesas+=v; porCat[f.categoria]=(porCat[f.categoria]||0)+v; }
+    dados.fixas.forEach(f=>Object.entries(f.pagamentos||{}).forEach(([ref,pg])=>{
+      const mAttr=maxMes(ref,(pg&&pg.data)?mesDe(pg.data):ref);
+      if(filtro==='todos'||mAttr===filtro){ const v=(pg&&pg.valor!=null)?pg.valor:f.valor; despesas+=v; porCat[f.categoria]=(porCat[f.categoria]||0)+v; }
     }));
     const saldo=receitas-despesas;
     document.getElementById('c-receitas').textContent=brl(receitas);
@@ -420,24 +421,29 @@
 
   // ===== Situação: pago / a pagar / atrasadas (meses anteriores) =====
   function proxMes(m){ let [a,mm]=m.split('-').map(Number); mm++; if(mm>12){mm=1;a++;} return a+'-'+String(mm).padStart(2,'0'); }
+  function maxMes(a,b){ return a>b?a:b; }   // meses no formato AAAA-MM comparam como texto
   function coletarSituacao(){
     const mesAtual=mesDe(hojeISO());
     const atrasadas=[], aPagar=[], pagas=[];
     dados.contas.forEach(c=>c.parcelas.forEach(p=>{
       const nome=c.descricao+(c.parcelas.length>1?` (${p.n}/${c.parcelas.length})`:'');
       const mv=mesDe(p.vencimento);
-      if(mv===mesAtual){
-        if(p.pago) pagas.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,cId:c.id,pn:p.n});
-        else aPagar.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,cId:c.id,pn:p.n});
-      } else if(mv<mesAtual && !p.pago){
-        atrasadas.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,ref:mv,cId:c.id,pn:p.n});
+      if(p.pago){
+        const mAttr=maxMes(mv, mesDe(p.pagoEm||p.vencimento));
+        if(mAttr===mesAtual) pagas.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,cId:c.id,pn:p.n, ref:(mv!==mesAtual?mv:undefined)});
+      } else {
+        if(mv===mesAtual) aPagar.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,cId:c.id,pn:p.n});
+        else if(mv<mesAtual) atrasadas.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,ref:mv,cId:c.id,pn:p.n});
       }
     }));
     dados.fixas.forEach(f=>{
+      Object.entries(f.pagamentos).forEach(([ref,pg])=>{
+        const mAttr=maxMes(ref,(pg&&pg.data)?mesDe(pg.data):ref);
+        if(mAttr===mesAtual) pagas.push({kind:'fixa',nome:f.descricao,valor:(pg&&pg.valor!=null?pg.valor:f.valor),venc:vencFixaNoMes(f.dia,ref),fId:f.id,mesRef:ref, ref:(ref!==mesAtual?ref:undefined)});
+      });
       let m=f.desde||mesAtual; let guarda=0;
       while(m<mesAtual && guarda<600){ if(!f.pagamentos[m]) atrasadas.push({kind:'fixa',nome:f.descricao,valor:f.valor,venc:vencFixaNoMes(f.dia,m),ref:m,fId:f.id,mesRef:m}); m=proxMes(m); guarda++; }
-      if(f.pagamentos[mesAtual]){ const pg=f.pagamentos[mesAtual]; pagas.push({kind:'fixa',nome:f.descricao,valor:(pg&&pg.valor!=null?pg.valor:f.valor),venc:vencFixaNoMes(f.dia,mesAtual),fId:f.id,mesRef:mesAtual}); }
-      else aPagar.push({kind:'fixa',nome:f.descricao,valor:f.valor,venc:vencFixaNoMes(f.dia,mesAtual),fId:f.id,mesRef:mesAtual});
+      if(!f.pagamentos[mesAtual]) aPagar.push({kind:'fixa',nome:f.descricao,valor:f.valor,venc:vencFixaNoMes(f.dia,mesAtual),fId:f.id,mesRef:mesAtual});
     });
     atrasadas.sort((a,b)=>a.venc.localeCompare(b.venc));
     aPagar.sort((a,b)=>a.venc.localeCompare(b.venc));
