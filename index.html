@@ -376,7 +376,7 @@
   function todosOsMeses(){
     const set=new Set();
     dados.lancamentos.forEach(l=>set.add(mesDe(l.data)));
-    dados.contas.forEach(c=>c.parcelas.forEach(p=>{ if(p.pago&&p.pagoEm) set.add(mesDe(p.pagoEm)); }));
+    dados.contas.forEach(c=>c.parcelas.forEach(p=>{ if(p.pago) set.add(mesDe(p.vencimento)); }));
     dados.fixas.forEach(f=>Object.keys(f.pagamentos||{}).forEach(m=>set.add(m)));
     set.add(mesDe(hojeISO()));
     return [...set].sort().reverse();
@@ -399,7 +399,7 @@
       else { despesas+=l.valor; porCat[l.categoria]=(porCat[l.categoria]||0)+l.valor; }
     });
     dados.contas.forEach(c=>c.parcelas.forEach(p=>{
-      if(p.pago&&p.pagoEm&&(filtro==='todos'||mesDe(p.pagoEm)===filtro)){ despesas+=p.valor; porCat[c.categoria]=(porCat[c.categoria]||0)+p.valor; }
+      if(p.pago&&(filtro==='todos'||mesDe(p.vencimento)===filtro)){ despesas+=p.valor; porCat[c.categoria]=(porCat[c.categoria]||0)+p.valor; }
     }));
     dados.fixas.forEach(f=>Object.entries(f.pagamentos||{}).forEach(([mes,pg])=>{
       if(filtro==='todos'||mes===filtro){ const v=(pg&&pg.valor!=null)?pg.valor:f.valor; despesas+=v; porCat[f.categoria]=(porCat[f.categoria]||0)+v; }
@@ -425,10 +425,12 @@
     const atrasadas=[], aPagar=[], pagas=[];
     dados.contas.forEach(c=>c.parcelas.forEach(p=>{
       const nome=c.descricao+(c.parcelas.length>1?` (${p.n}/${c.parcelas.length})`:'');
-      if(p.pago){ if(p.pagoEm&&mesDe(p.pagoEm)===mesAtual) pagas.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,cId:c.id,pn:p.n}); }
-      else { const mv=mesDe(p.vencimento);
-        if(mv<mesAtual) atrasadas.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,ref:mv,cId:c.id,pn:p.n});
-        else if(mv===mesAtual) aPagar.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,cId:c.id,pn:p.n});
+      const mv=mesDe(p.vencimento);
+      if(mv===mesAtual){
+        if(p.pago) pagas.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,cId:c.id,pn:p.n});
+        else aPagar.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,cId:c.id,pn:p.n});
+      } else if(mv<mesAtual && !p.pago){
+        atrasadas.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,ref:mv,cId:c.id,pn:p.n});
       }
     }));
     dados.fixas.forEach(f=>{
