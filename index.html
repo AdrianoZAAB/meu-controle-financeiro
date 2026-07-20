@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Controle Financeiro</title>
+<style>
+  :root{
+    --verde:#16a34a; --vermelho:#dc2626; --azul:#3b82f6; --amarelo:#d97706;
+    --fundo:#0f172a; --card:#1e293b; --card2:#273449;
+    --texto:#e2e8f0; --suave:#94a3b8; --borda:#334155;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--fundo);color:var(--texto);line-height:1.5;}
+  header{padding:20px 16px;text-align:center;background:linear-gradient(135deg,#1e293b,#0f172a);border-bottom:1px solid var(--borda);position:relative;}
+  header h1{margin:0;font-size:1.4rem;}
+  header p{margin:4px 0 0;color:var(--suave);font-size:.85rem;}
+  .userbar{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:10px;font-size:.8rem;color:var(--suave);flex-wrap:wrap;}
+  .badge{padding:3px 10px;border-radius:999px;font-size:.72rem;font-weight:600;border:1px solid var(--borda);background:var(--card2);}
+  .badge.ok{color:var(--verde);border-color:rgba(22,163,74,.4);}
+  .badge.sync{color:var(--amarelo);border-color:rgba(217,119,6,.4);}
+  .badge.erro{color:var(--vermelho);border-color:rgba(220,38,38,.4);}
+  .badge.local{color:var(--suave);}
+  .link-sair{color:var(--azul);cursor:pointer;text-decoration:underline;background:none;border:none;font-size:.8rem;}
+  main{max-width:960px;margin:0 auto;padding:16px;}
+  .abas{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
+  .aba{flex:1;min-width:120px;padding:11px;border-radius:10px;border:1px solid var(--borda);background:var(--card);color:var(--suave);cursor:pointer;font-weight:600;font-size:.9rem;text-align:center;}
+  .aba.ativa{background:var(--azul);color:#fff;border-color:var(--azul);}
+  section{display:none;}
+  section.ativa{display:block;}
+  .topo{display:flex;justify-content:flex-end;align-items:center;margin-bottom:12px;gap:8px;}
+  select,input{padding:9px 10px;border-radius:8px;border:1px solid var(--borda);background:var(--card2);color:var(--texto);font-size:.9rem;}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+  .card{background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:16px;text-align:center;}
+  .card small{color:var(--suave);text-transform:uppercase;font-size:.7rem;letter-spacing:.5px;}
+  .card .valor{font-size:1.35rem;font-weight:700;margin-top:6px;}
+  .verde{color:var(--verde);} .vermelho{color:var(--vermelho);} .azul{color:var(--azul);} .amarelo{color:var(--amarelo);}
+  .painel{background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:16px;margin-bottom:18px;}
+  .painel h2{margin:0 0 12px;font-size:1rem;display:flex;align-items:center;gap:8px;}
+  form{display:grid;gap:8px;align-items:end;}
+  .form-dia{grid-template-columns:2fr 1fr 1fr 1.2fr auto;}
+  .form-conta{grid-template-columns:2fr 1fr 1fr 1.2fr 1fr auto;}
+  .campo{display:flex;flex-direction:column;gap:4px;}
+  .campo label{font-size:.72rem;color:var(--suave);}
+  button.add{padding:9px 10px;border-radius:8px;background:var(--azul);border:none;cursor:pointer;font-weight:600;color:#fff;font-size:.9rem;}
+  button.add:hover{opacity:.9;}
+  table{width:100%;border-collapse:collapse;}
+  th,td{padding:9px 8px;text-align:left;border-bottom:1px solid var(--borda);font-size:.88rem;}
+  th{color:var(--suave);font-weight:600;font-size:.72rem;text-transform:uppercase;}
+  .tag{padding:2px 8px;border-radius:999px;font-size:.72rem;font-weight:600;white-space:nowrap;}
+  .tag.receita{background:rgba(22,163,74,.15);color:var(--verde);}
+  .tag.despesa{background:rgba(220,38,38,.15);color:var(--vermelho);}
+  .tag.pago{background:rgba(22,163,74,.15);color:var(--verde);}
+  .tag.pendente{background:rgba(217,119,6,.15);color:var(--amarelo);}
+  .tag.vencida{background:rgba(220,38,38,.15);color:var(--vermelho);}
+  .btn-mini{padding:5px 10px;border-radius:7px;border:1px solid var(--borda);background:var(--card2);color:var(--texto);cursor:pointer;font-size:.78rem;font-weight:600;}
+  .btn-mini.pagar{border-color:var(--verde);color:var(--verde);}
+  .btn-mini.pagar:hover{background:rgba(22,163,74,.12);}
+  .excluir{background:transparent;color:var(--suave);border:none;cursor:pointer;font-size:1rem;}
+  .excluir:hover{color:var(--vermelho);}
+  .vazio{text-align:center;color:var(--suave);padding:22px;}
+  .conta-box{border:1px solid var(--borda);border-radius:10px;padding:12px;margin-bottom:12px;}
+  .conta-cab{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+  .conta-cab strong{font-size:.98rem;}
+  .prog{color:var(--suave);font-size:.8rem;}
+  .barra-linha{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:.85rem;}
+  .barra-nome{width:130px;color:var(--suave);}
+  .barra-fundo{flex:1;background:var(--card2);border-radius:6px;height:14px;overflow:hidden;}
+  .barra-fill{height:100%;background:var(--vermelho);}
+  .barra-val{width:100px;text-align:right;}
+  .alerta{padding:10px 12px;border-radius:9px;margin-bottom:8px;font-size:.88rem;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .alerta.venc{background:rgba(220,38,38,.10);border:1px solid rgba(220,38,38,.35);}
+  .alerta.prox{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);}
+  /* Login */
+  .overlay{position:fixed;inset:0;background:rgba(15,23,42,.96);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50;}
+  .login-box{background:var(--card);border:1px solid var(--borda);border-radius:14px;padding:24px;width:100%;max-width:360px;}
+  .login-box h2{margin:0 0 4px;font-size:1.2rem;text-align:center;}
+  .login-box p{margin:0 0 18px;color:var(--suave);font-size:.85rem;text-align:center;}
+  .login-box .campo{margin-bottom:12px;}
+  .login-box button{width:100%;padding:11px;border-radius:9px;border:none;background:var(--azul);color:#fff;font-weight:600;cursor:pointer;font-size:.95rem;}
+  .login-box button.sec{background:transparent;border:1px solid var(--borda);color:var(--texto);margin-top:8px;}
+  .login-msg{margin-top:12px;font-size:.83rem;text-align:center;min-height:18px;}
+  .login-msg.erro{color:var(--vermelho);}
+  .login-msg.ok{color:var(--verde);}
+  .aviso-local{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amarelo);padding:8px 12px;border-radius:8px;font-size:.82rem;margin-bottom:14px;text-align:center;}
+  @media(max-width:720px){
+    .cards{grid-template-columns:1fr;}
+    .form-dia,.form-conta{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Tela de login (aparece só no modo nuvem) ===== -->
+<div class="overlay" id="loginOverlay" style="display:none">
+  <div class="login-box">
+    <h2>💰 Controle Financeiro</h2>
+    <p>Entre para acessar suas finanças de qualquer aparelho</p>
+    <div class="campo"><label>E-mail</label><input id="lg-email" type="email" placeholder="voce@email.com" /></div>
+    <div class="campo"><label>Senha</label><input id="lg-senha" type="password" placeholder="sua senha" /></div>
+    <button id="btnEntrar">Entrar</button>
+    <button id="btnCriar" class="sec">Criar conta</button>
+    <div class="login-msg" id="loginMsg"></div>
+  </div>
+</div>
+
+<header>
+  <h1>💰 Controle Financeiro</h1>
+  <p>Gastos do dia a dia, contas com vencimento e parcelas</p>
+  <div class="userbar" id="userbar" style="display:none">
+    <span id="userEmail"></span>
+    <span class="badge local" id="syncBadge">•</span>
+    <button class="link-sair" id="btnSair">sair</button>
+  </div>
+</header>
+
+<main>
+  <div class="aviso-local" id="avisoLocal" style="display:none">
+    ⚠️ Modo local (dados só neste aparelho). Configure o Supabase para sincronizar — veja o PASSO-A-PASSO.
+  </div>
+
+  <div class="abas">
+    <div class="aba ativa" data-sec="resumo">📊 Resumo</div>
+    <div class="aba" data-sec="dia">🛒 Dia a dia</div>
+    <div class="aba" data-sec="contas">📅 Contas a pagar</div>
+  </div>
+
+  <!-- RESUMO -->
+  <section id="resumo" class="ativa">
+    <div class="topo">
+      <label style="color:var(--suave);font-size:.85rem;align-self:center;">Mês:</label>
+      <select id="filtroMes"><option value="todos">Todos</option></select>
+    </div>
+    <div class="cards">
+      <div class="card"><small>Receitas do mês</small><div class="valor verde" id="c-receitas">R$ 0,00</div></div>
+      <div class="card"><small>Despesas do mês</small><div class="valor vermelho" id="c-despesas">R$ 0,00</div></div>
+      <div class="card"><small>Saldo do mês</small><div class="valor azul" id="c-saldo">R$ 0,00</div></div>
+    </div>
+    <div class="painel">
+      <h2>⚠️ Contas a resolver</h2>
+      <div id="alertas"></div>
+      <div class="vazio" id="alertasVazio">Nenhuma conta pendente. Tudo em dia! ✅</div>
+    </div>
+    <div class="painel" id="painelCategorias" style="display:none">
+      <h2>Despesas por categoria (no mês)</h2>
+      <div id="barras"></div>
+    </div>
+  </section>
+
+  <!-- DIA A DIA -->
+  <section id="dia">
+    <div class="painel">
+      <h2>🛒 Registrar gasto ou entrada do dia</h2>
+      <form id="formDia" class="form-dia">
+        <div class="campo"><label>O que foi? (ex: comprei um lanche)</label><input id="d-descricao" placeholder="Descrição" required /></div>
+        <div class="campo"><label>Valor (R$)</label><input id="d-valor" type="number" step="0.01" min="0.01" placeholder="0,00" required /></div>
+        <div class="campo"><label>Tipo</label><select id="d-tipo"><option value="despesa">Despesa</option><option value="receita">Receita</option></select></div>
+        <div class="campo"><label>Categoria</label><input id="d-categoria" placeholder="Ex: Alimentação" list="cats" /></div>
+        <button type="submit" class="add">Adicionar</button>
+      </form>
+      <div class="campo" style="max-width:200px;margin-top:8px;"><label>Data (opcional, padrão hoje)</label><input id="d-data" type="date" /></div>
+    </div>
+    <div class="painel">
+      <h2>Lançamentos</h2>
+      <table>
+        <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th style="text-align:right">Valor</th><th></th></tr></thead>
+        <tbody id="listaDia"></tbody>
+      </table>
+      <div class="vazio" id="diaVazio">Nenhum lançamento ainda. Registre seu primeiro gasto acima! 👆</div>
+    </div>
+  </section>
+
+  <!-- CONTAS -->
+  <section id="contas">
+    <div class="painel">
+      <h2>📅 Nova conta a pagar</h2>
+      <form id="formConta" class="form-conta">
+        <div class="campo"><label>Descrição (ex: Cartão, Geladeira)</label><input id="ct-descricao" placeholder="Descrição" required /></div>
+        <div class="campo"><label>Valor total (R$)</label><input id="ct-valor" type="number" step="0.01" min="0.01" placeholder="0,00" required /></div>
+        <div class="campo"><label>Categoria</label><input id="ct-categoria" placeholder="Ex: Cartão" list="cats" /></div>
+        <div class="campo"><label>1º vencimento</label><input id="ct-vencimento" type="date" required /></div>
+        <div class="campo"><label>Nº de parcelas</label><input id="ct-parcelas" type="number" min="1" step="1" value="1" /></div>
+        <button type="submit" class="add">Adicionar</button>
+      </form>
+      <div style="margin-top:8px;color:var(--suave);font-size:.8rem;">Se for parcelado, coloque a quantidade (ex: 10). O total é dividido e cada parcela recebe vencimento mês a mês. Conta única = 1.</div>
+    </div>
+    <div class="painel">
+      <h2>Suas contas</h2>
+      <div id="listaContas"></div>
+      <div class="vazio" id="contasVazio">Nenhuma conta cadastrada. Adicione uma acima! 👆</div>
+    </div>
+  </section>
+</main>
+
+<datalist id="cats">
+  <option>Alimentação</option><option>Moradia</option><option>Transporte</option>
+  <option>Lazer</option><option>Saúde</option><option>Educação</option>
+  <option>Cartão</option><option>Salário</option><option>Contas fixas</option><option>Outros</option>
+</datalist>
+
+<!-- Biblioteca do Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ============================================================
+  //  CONFIGURAÇÃO — cole aqui os 2 valores do seu projeto Supabase
+  //  (veja o arquivo PASSO-A-PASSO.md). Enquanto não colar, o app
+  //  funciona em "modo local" (dados só neste aparelho).
+  // ============================================================
+  const SUPABASE_URL = "https://oeugpsczvmvtoxsyhifs.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_-tx9DuSsZbr7ZMDnSH5Y-A_ledu4PGJ";
+
+  const configOK = !SUPABASE_URL.includes("COLE_") && !SUPABASE_ANON_KEY.includes("COLE_");
+
+  // ============================================================
+  //  Estado + armazenamento
+  // ============================================================
+  const CHAVE = 'controle_financeiro_v2';
+  let dados = { lancamentos: [], contas: [] };
+  let modo = 'local';           // 'local' ou 'nuvem'
+  let sb = null;                // cliente supabase
+  let userId = null;
+  let timerSync = null;
+
+  function normalizar(){
+    if(!dados || typeof dados!=='object') dados={lancamentos:[],contas:[]};
+    if(!Array.isArray(dados.lancamentos)) dados.lancamentos=[];
+    if(!Array.isArray(dados.contas)) dados.contas=[];
+  }
+  function cacheLocalCarregar(){
+    try{ const s=JSON.parse(localStorage.getItem(CHAVE)); if(s) dados=s; }catch(e){}
+    normalizar();
+  }
+  function badge(estado, texto){
+    const b=document.getElementById('syncBadge');
+    b.className='badge '+estado; b.textContent=texto;
+  }
+  function salvar(){
+    localStorage.setItem(CHAVE, JSON.stringify(dados)); // cache local sempre
+    if(modo==='nuvem'){
+      badge('sync','sincronizando…');
+      clearTimeout(timerSync);
+      timerSync=setTimeout(salvarNaNuvem, 600);
+    }
+  }
+  async function salvarNaNuvem(){
+    if(!sb || !userId) return;
+    const { error } = await sb.from('financas')
+      .upsert({ user_id:userId, conteudo:dados, atualizado_em:new Date().toISOString() });
+    if(error){ badge('erro','erro ao salvar'); console.error(error); }
+    else { badge('ok','salvo ✓'); }
+  }
+  async function carregarDaNuvem(){
+    const { data, error } = await sb.from('financas')
+      .select('conteudo').eq('user_id', userId).maybeSingle();
+    if(error){ console.error(error); badge('erro','erro ao carregar'); }
+    if(data && data.conteudo){
+      dados = data.conteudo; normalizar();
+    } else {
+      // sem dados na nuvem ainda: sobe o que houver localmente (migração)
+      normalizar(); await salvarNaNuvem();
+    }
+  }
+
+  // ============================================================
+  //  Utilidades
+  // ============================================================
+  const brl = (n) => (n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const hojeISO = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+  const mesDe = (iso) => iso.slice(0,7);
+  const fmtData = (iso) => iso.split('-').reverse().join('/');
+  function nomeMes(aaaamm){
+    const [a,m]=aaaamm.split('-');
+    const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    return meses[parseInt(m,10)-1]+'/'+a;
+  }
+  function addMeses(iso,k){
+    let [a,m,d]=iso.split('-').map(Number);
+    let idx=(m-1)+k; let ano=a+Math.floor(idx/12); let mes=((idx%12)+12)%12;
+    let ultimoDia=new Date(ano,mes+1,0).getDate();
+    let dia=Math.min(d,ultimoDia);
+    return ano+'-'+String(mes+1).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
+  }
+  function diasEntre(isoA,isoB){
+    const a=new Date(isoA+'T00:00:00'), b=new Date(isoB+'T00:00:00');
+    return Math.round((b-a)/86400000);
+  }
+
+  // ============================================================
+  //  Abas
+  // ============================================================
+  document.querySelectorAll('.aba').forEach(aba=>{
+    aba.onclick=()=>{
+      document.querySelectorAll('.aba').forEach(a=>a.classList.remove('ativa'));
+      document.querySelectorAll('section').forEach(s=>s.classList.remove('ativa'));
+      aba.classList.add('ativa');
+      document.getElementById(aba.dataset.sec).classList.add('ativa');
+    };
+  });
+
+  // ============================================================
+  //  Filtro de meses
+  // ============================================================
+  function todosOsMeses(){
+    const set=new Set();
+    dados.lancamentos.forEach(l=>set.add(mesDe(l.data)));
+    dados.contas.forEach(c=>c.parcelas.forEach(p=>{ if(p.pago && p.pagoEm) set.add(mesDe(p.pagoEm)); }));
+    return [...set].sort().reverse();
+  }
+  function atualizarFiltroMeses(){
+    const sel=document.getElementById('filtroMes');
+    const atual=sel.value;
+    const meses=todosOsMeses();
+    sel.innerHTML='<option value="todos">Todos</option>'+meses.map(m=>`<option value="${m}">${nomeMes(m)}</option>`).join('');
+    if([...sel.options].some(o=>o.value===atual)) sel.value=atual;
+  }
+
+  // ============================================================
+  //  Render: Resumo
+  // ============================================================
+  function renderResumo(){
+    const filtro=document.getElementById('filtroMes').value;
+    const noMes=(iso)=> filtro==='todos' || mesDe(iso)===filtro;
+    const receitas=dados.lancamentos.filter(l=>l.tipo==='receita'&&noMes(l.data)).reduce((s,l)=>s+l.valor,0);
+    let despesas=dados.lancamentos.filter(l=>l.tipo==='despesa'&&noMes(l.data)).reduce((s,l)=>s+l.valor,0);
+    const porCat={};
+    dados.lancamentos.filter(l=>l.tipo==='despesa'&&noMes(l.data)).forEach(l=>{porCat[l.categoria]=(porCat[l.categoria]||0)+l.valor;});
+    dados.contas.forEach(c=>c.parcelas.forEach(p=>{
+      if(p.pago && p.pagoEm && (filtro==='todos'||mesDe(p.pagoEm)===filtro)){
+        despesas+=p.valor; porCat[c.categoria]=(porCat[c.categoria]||0)+p.valor;
+      }
+    }));
+    const saldo=receitas-despesas;
+    document.getElementById('c-receitas').textContent=brl(receitas);
+    document.getElementById('c-despesas').textContent=brl(despesas);
+    const se=document.getElementById('c-saldo'); se.textContent=brl(saldo);
+    se.className='valor '+(saldo>=0?'azul':'vermelho');
+
+    const cats=Object.entries(porCat).sort((a,b)=>b[1]-a[1]);
+    const pc=document.getElementById('painelCategorias'), barras=document.getElementById('barras');
+    if(cats.length){
+      pc.style.display='block';
+      const max=Math.max(...cats.map(c=>c[1]));
+      barras.innerHTML=cats.map(([nome,val])=>`
+        <div class="barra-linha">
+          <div class="barra-nome">${nome}</div>
+          <div class="barra-fundo"><div class="barra-fill" style="width:${(val/max*100).toFixed(0)}%"></div></div>
+          <div class="barra-val vermelho">${brl(val)}</div>
+        </div>`).join('');
+    } else pc.style.display='none';
+
+    const hoje=hojeISO();
+    const pendentes=[];
+    dados.contas.forEach(c=>c.parcelas.forEach(p=>{ if(!p.pago) pendentes.push({conta:c,p}); }));
+    pendentes.sort((a,b)=>a.p.vencimento.localeCompare(b.p.vencimento));
+    const alertas=document.getElementById('alertas'), av=document.getElementById('alertasVazio');
+    const relevantes=pendentes.filter(x=>diasEntre(hoje,x.p.vencimento)<=30);
+    if(relevantes.length){
+      av.style.display='none';
+      alertas.innerHTML=relevantes.map(({conta,p})=>{
+        const dias=diasEntre(hoje,p.vencimento);
+        const vencida=dias<0; const cls=vencida?'venc':'prox';
+        let quando = dias<0 ? `Venceu há ${Math.abs(dias)} dia(s)` : (dias===0?'Vence hoje':`Vence em ${dias} dia(s)`);
+        const info = conta.parcelas.length>1 ? ` (parcela ${p.n}/${conta.parcelas.length})` : '';
+        return `<div class="alerta ${cls}">
+          <span><strong>${conta.descricao}</strong>${info} — ${fmtData(p.vencimento)} · ${quando}</span>
+          <span class="${vencida?'vermelho':'amarelo'}" style="font-weight:700;">${brl(p.valor)}</span></div>`;
+      }).join('');
+    } else { alertas.innerHTML=''; av.style.display='block'; }
+  }
+
+  // ============================================================
+  //  Render: Dia a dia
+  // ============================================================
+  function renderDia(){
+    const tb=document.getElementById('listaDia'), vazio=document.getElementById('diaVazio');
+    const arr=[...dados.lancamentos].sort((a,b)=>b.data.localeCompare(a.data)||b.id-a.id);
+    tb.innerHTML=''; vazio.style.display=arr.length?'none':'block';
+    for(const l of arr){
+      const sinal=l.tipo==='receita'?'+':'−'; const cor=l.tipo==='receita'?'verde':'vermelho';
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${fmtData(l.data)}</td><td>${l.descricao}</td><td>${l.categoria}</td>
+        <td><span class="tag ${l.tipo}">${l.tipo}</span></td>
+        <td style="text-align:right" class="${cor}">${sinal} ${brl(l.valor)}</td>
+        <td style="text-align:right"><button class="excluir" data-id="${l.id}" title="Excluir">✕</button></td>`;
+      tb.appendChild(tr);
+    }
+    tb.querySelectorAll('.excluir').forEach(b=>{
+      b.onclick=()=>{ dados.lancamentos=dados.lancamentos.filter(l=>l.id!==Number(b.dataset.id)); salvar(); atualizarTudo(); };
+    });
+  }
+
+  // ============================================================
+  //  Render: Contas
+  // ============================================================
+  function renderContas(){
+    const wrap=document.getElementById('listaContas'), vazio=document.getElementById('contasVazio');
+    vazio.style.display=dados.contas.length?'none':'block';
+    const hoje=hojeISO();
+    wrap.innerHTML=dados.contas.map(c=>{
+      const pagas=c.parcelas.filter(p=>p.pago).length; const total=c.parcelas.length;
+      const totalValor=c.parcelas.reduce((s,p)=>s+p.valor,0);
+      const linhas=c.parcelas.map(p=>{
+        let status,cls;
+        if(p.pago){status='Paga';cls='pago';}
+        else if(diasEntre(hoje,p.vencimento)<0){status='Vencida';cls='vencida';}
+        else {status='Pendente';cls='pendente';}
+        const rotulo = total>1 ? `Parcela ${p.n}/${total}` : 'Pagamento único';
+        const acao = p.pago
+          ? `<button class="btn-mini" data-conta="${c.id}" data-parc="${p.n}" data-acao="desmarcar">Desfazer</button>`
+          : `<button class="btn-mini pagar" data-conta="${c.id}" data-parc="${p.n}" data-acao="pagar">Marcar paga</button>`;
+        return `<tr><td>${rotulo}</td><td>${fmtData(p.vencimento)}</td>
+          <td><span class="tag ${cls}">${status}</span></td>
+          <td style="text-align:right">${brl(p.valor)}</td>
+          <td style="text-align:right">${acao}</td></tr>`;
+      }).join('');
+      return `<div class="conta-box">
+        <div class="conta-cab"><strong>${c.descricao}</strong>
+          <span class="prog">${c.categoria} · ${pagas}/${total} paga(s) · total ${brl(totalValor)}</span>
+          <button class="excluir" data-conta-del="${c.id}" title="Excluir conta">✕</button></div>
+        <table><tbody>${linhas}</tbody></table></div>`;
+    }).join('');
+    wrap.querySelectorAll('[data-acao]').forEach(b=>{
+      b.onclick=()=>{
+        const c=dados.contas.find(x=>x.id===Number(b.dataset.conta)); if(!c) return;
+        const p=c.parcelas.find(x=>x.n===Number(b.dataset.parc)); if(!p) return;
+        if(b.dataset.acao==='pagar'){ p.pago=true; p.pagoEm=hojeISO(); } else { p.pago=false; p.pagoEm=null; }
+        salvar(); atualizarTudo();
+      };
+    });
+    wrap.querySelectorAll('[data-conta-del]').forEach(b=>{
+      b.onclick=()=>{ dados.contas=dados.contas.filter(c=>c.id!==Number(b.dataset.contaDel)); salvar(); atualizarTudo(); };
+    });
+  }
+
+  function atualizarTudo(){ atualizarFiltroMeses(); renderResumo(); renderDia(); renderContas(); }
+
+  // ============================================================
+  //  Formulários
+  // ============================================================
+  document.getElementById('formDia').onsubmit=(e)=>{
+    e.preventDefault();
+    const valor=parseFloat(document.getElementById('d-valor').value);
+    if(!(valor>0)) return;
+    const dataEscolhida=document.getElementById('d-data').value || hojeISO();
+    dados.lancamentos.push({
+      id:Date.now(),
+      descricao:document.getElementById('d-descricao').value.trim(),
+      valor, tipo:document.getElementById('d-tipo').value,
+      categoria:document.getElementById('d-categoria').value.trim()||'Outros',
+      data:dataEscolhida,
+    });
+    salvar(); e.target.reset(); document.getElementById('d-data').value=''; atualizarTudo();
+  };
+
+  document.getElementById('formConta').onsubmit=(e)=>{
+    e.preventDefault();
+    const total=parseFloat(document.getElementById('ct-valor').value);
+    const nParc=Math.max(1,parseInt(document.getElementById('ct-parcelas').value||'1',10));
+    const venc1=document.getElementById('ct-vencimento').value;
+    if(!(total>0)||!venc1) return;
+    const base=Math.floor((total/nParc)*100)/100;
+    const parcelas=[]; let soma=0;
+    for(let i=1;i<=nParc;i++){
+      let valor=(i===nParc)?Math.round((total-soma)*100)/100:base; soma+=base;
+      parcelas.push({ n:i, valor, vencimento:addMeses(venc1,i-1), pago:false, pagoEm:null });
+    }
+    dados.contas.push({
+      id:Date.now(),
+      descricao:document.getElementById('ct-descricao').value.trim(),
+      categoria:document.getElementById('ct-categoria').value.trim()||'Contas fixas',
+      parcelas,
+    });
+    salvar(); e.target.reset(); document.getElementById('ct-parcelas').value='1';
+    atualizarTudo(); document.querySelector('.aba[data-sec="contas"]').click();
+  };
+
+  document.getElementById('filtroMes').onchange=renderResumo;
+
+  // ============================================================
+  //  Login / Autenticação (modo nuvem)
+  // ============================================================
+  function msgLogin(txt,tipo){ const m=document.getElementById('loginMsg'); m.textContent=txt; m.className='login-msg '+(tipo||''); }
+
+  async function entrarNoApp(user){
+    userId=user.id; modo='nuvem';
+    document.getElementById('loginOverlay').style.display='none';
+    document.getElementById('userbar').style.display='flex';
+    document.getElementById('userEmail').textContent=user.email;
+    badge('sync','carregando…');
+    await carregarDaNuvem();
+    badge('ok','salvo ✓');
+    atualizarTudo();
+  }
+
+  function mostrarLogin(){ document.getElementById('loginOverlay').style.display='flex'; }
+
+  async function iniciarNuvem(){
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data:{ session } } = await sb.auth.getSession();
+    if(session && session.user){ await entrarNoApp(session.user); }
+    else { mostrarLogin(); atualizarTudo(); }
+
+    document.getElementById('btnEntrar').onclick=async ()=>{
+      const email=document.getElementById('lg-email').value.trim();
+      const senha=document.getElementById('lg-senha').value;
+      if(!email||!senha){ msgLogin('Preencha e-mail e senha.','erro'); return; }
+      msgLogin('Entrando…');
+      const { data, error } = await sb.auth.signInWithPassword({ email, password:senha });
+      if(error){ msgLogin('Não deu certo: '+error.message,'erro'); return; }
+      await entrarNoApp(data.user);
+    };
+    document.getElementById('btnCriar').onclick=async ()=>{
+      const email=document.getElementById('lg-email').value.trim();
+      const senha=document.getElementById('lg-senha').value;
+      if(!email||senha.length<6){ msgLogin('E-mail válido e senha de 6+ caracteres.','erro'); return; }
+      msgLogin('Criando conta…');
+      const { data, error } = await sb.auth.signUp({ email, password:senha });
+      if(error){ msgLogin('Erro: '+error.message,'erro'); return; }
+      if(data.session && data.user){ await entrarNoApp(data.user); }
+      else { msgLogin('Conta criada! Se pedir, confirme pelo e-mail e depois clique em Entrar.','ok'); }
+    };
+    document.getElementById('btnSair').onclick=async ()=>{ await sb.auth.signOut(); location.reload(); };
+  }
+
+  // ============================================================
+  //  Início
+  // ============================================================
+  (function iniciar(){
+    cacheLocalCarregar();
+    if(configOK && window.supabase){
+      iniciarNuvem();
+    } else {
+      modo='local';
+      document.getElementById('avisoLocal').style.display='block';
+      badge('local','modo local');
+      document.getElementById('userbar').style.display='flex';
+      document.getElementById('userEmail').textContent='(sem login)';
+      document.getElementById('btnSair').style.display='none';
+      atualizarTudo();
+    }
+  })();
+</script>
+</body>
+</html>
