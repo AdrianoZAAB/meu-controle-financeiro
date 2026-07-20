@@ -6,13 +6,13 @@
 <title>Controle Financeiro</title>
 <style>
   :root{
-    --verde:#16a34a; --vermelho:#dc2626; --azul:#3b82f6; --amarelo:#d97706;
+    --verde:#16a34a; --vermelho:#dc2626; --azul:#3b82f6; --amarelo:#d97706; --roxo:#8b5cf6;
     --fundo:#0f172a; --card:#1e293b; --card2:#273449;
     --texto:#e2e8f0; --suave:#94a3b8; --borda:#334155;
   }
   *{box-sizing:border-box;}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--fundo);color:var(--texto);line-height:1.5;}
-  header{padding:20px 16px;text-align:center;background:linear-gradient(135deg,#1e293b,#0f172a);border-bottom:1px solid var(--borda);position:relative;}
+  header{padding:18px 16px;text-align:center;background:linear-gradient(135deg,#1e293b,#0f172a);border-bottom:1px solid var(--borda);}
   header h1{margin:0;font-size:1.4rem;}
   header p{margin:4px 0 0;color:var(--suave);font-size:.85rem;}
   .userbar{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:10px;font-size:.8rem;color:var(--suave);flex-wrap:wrap;}
@@ -24,7 +24,7 @@
   .link-sair{color:var(--azul);cursor:pointer;text-decoration:underline;background:none;border:none;font-size:.8rem;}
   main{max-width:960px;margin:0 auto;padding:16px;}
   .abas{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
-  .aba{flex:1;min-width:120px;padding:11px;border-radius:10px;border:1px solid var(--borda);background:var(--card);color:var(--suave);cursor:pointer;font-weight:600;font-size:.9rem;text-align:center;}
+  .aba{flex:1;min-width:110px;padding:10px 8px;border-radius:10px;border:1px solid var(--borda);background:var(--card);color:var(--suave);cursor:pointer;font-weight:600;font-size:.85rem;text-align:center;}
   .aba.ativa{background:var(--azul);color:#fff;border-color:var(--azul);}
   section{display:none;}
   section.ativa{display:block;}
@@ -34,11 +34,12 @@
   .card{background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:16px;text-align:center;}
   .card small{color:var(--suave);text-transform:uppercase;font-size:.7rem;letter-spacing:.5px;}
   .card .valor{font-size:1.35rem;font-weight:700;margin-top:6px;}
-  .verde{color:var(--verde);} .vermelho{color:var(--vermelho);} .azul{color:var(--azul);} .amarelo{color:var(--amarelo);}
+  .verde{color:var(--verde);} .vermelho{color:var(--vermelho);} .azul{color:var(--azul);} .amarelo{color:var(--amarelo);} .roxo{color:var(--roxo);}
   .painel{background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:16px;margin-bottom:18px;}
   .painel h2{margin:0 0 12px;font-size:1rem;display:flex;align-items:center;gap:8px;}
   form{display:grid;gap:8px;align-items:end;}
   .form-dia{grid-template-columns:2fr 1fr 1fr 1.2fr auto;}
+  .form-fixa{grid-template-columns:2fr 1fr 1fr 1fr auto;}
   .form-conta{grid-template-columns:2fr 1fr 1fr 1.2fr 1fr auto;}
   .campo{display:flex;flex-direction:column;gap:4px;}
   .campo label{font-size:.72rem;color:var(--suave);}
@@ -71,7 +72,6 @@
   .alerta{padding:10px 12px;border-radius:9px;margin-bottom:8px;font-size:.88rem;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;}
   .alerta.venc{background:rgba(220,38,38,.10);border:1px solid rgba(220,38,38,.35);}
   .alerta.prox{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);}
-  /* Login */
   .overlay{position:fixed;inset:0;background:rgba(15,23,42,.96);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50;}
   .login-box{background:var(--card);border:1px solid var(--borda);border-radius:14px;padding:24px;width:100%;max-width:360px;}
   .login-box h2{margin:0 0 4px;font-size:1.2rem;text-align:center;}
@@ -83,15 +83,15 @@
   .login-msg.erro{color:var(--vermelho);}
   .login-msg.ok{color:var(--verde);}
   .aviso-local{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amarelo);padding:8px 12px;border-radius:8px;font-size:.82rem;margin-bottom:14px;text-align:center;}
+  .dica{color:var(--suave);font-size:.8rem;margin-top:8px;}
   @media(max-width:720px){
     .cards{grid-template-columns:1fr;}
-    .form-dia,.form-conta{grid-template-columns:1fr 1fr;}
+    .form-dia,.form-conta,.form-fixa{grid-template-columns:1fr 1fr;}
   }
 </style>
 </head>
 <body>
 
-<!-- ===== Tela de login (aparece só no modo nuvem) ===== -->
 <div class="overlay" id="loginOverlay" style="display:none">
   <div class="login-box">
     <h2>💰 Controle Financeiro</h2>
@@ -106,7 +106,7 @@
 
 <header>
   <h1>💰 Controle Financeiro</h1>
-  <p>Gastos do dia a dia, contas com vencimento e parcelas</p>
+  <p>Contas fixas, parceladas e gastos do dia a dia</p>
   <div class="userbar" id="userbar" style="display:none">
     <span id="userEmail"></span>
     <span class="badge local" id="syncBadge">•</span>
@@ -116,13 +116,14 @@
 
 <main>
   <div class="aviso-local" id="avisoLocal" style="display:none">
-    ⚠️ Modo local (dados só neste aparelho). Configure o Supabase para sincronizar — veja o PASSO-A-PASSO.
+    ⚠️ Modo local (dados só neste aparelho). Configure o Supabase para sincronizar.
   </div>
 
   <div class="abas">
     <div class="aba ativa" data-sec="resumo">📊 Resumo</div>
+    <div class="aba" data-sec="fixas">📌 Contas fixas</div>
+    <div class="aba" data-sec="parceladas">📅 Parceladas</div>
     <div class="aba" data-sec="dia">🛒 Dia a dia</div>
-    <div class="aba" data-sec="contas">📅 Contas a pagar</div>
   </div>
 
   <!-- RESUMO -->
@@ -147,6 +148,47 @@
     </div>
   </section>
 
+  <!-- CONTAS FIXAS -->
+  <section id="fixas">
+    <div class="painel">
+      <h2>📌 Nova conta fixa (todo mês)</h2>
+      <form id="formFixa" class="form-fixa">
+        <div class="campo"><label>Descrição (ex: Aluguel, Luz)</label><input id="fx-descricao" placeholder="Descrição" required /></div>
+        <div class="campo"><label>Valor médio (R$)</label><input id="fx-valor" type="number" step="0.01" min="0.01" placeholder="0,00" required /></div>
+        <div class="campo"><label>Categoria</label><input id="fx-categoria" placeholder="Ex: Moradia" list="cats" /></div>
+        <div class="campo"><label>Dia do vencimento</label><input id="fx-dia" type="number" min="1" max="31" placeholder="Ex: 10" required /></div>
+        <button type="submit" class="add">Adicionar</button>
+      </form>
+      <div class="dica">Contas que se repetem todo mês. Ao marcar como paga, você confirma o valor daquele mês (útil pra luz/água que variam).</div>
+    </div>
+    <div class="painel">
+      <h2>Suas contas fixas <span id="fx-mesref" class="prog" style="margin-left:auto"></span></h2>
+      <div id="listaFixas"></div>
+      <div class="vazio" id="fixasVazio">Nenhuma conta fixa cadastrada. Adicione uma acima! 👆</div>
+    </div>
+  </section>
+
+  <!-- PARCELADAS -->
+  <section id="parceladas">
+    <div class="painel">
+      <h2>📅 Nova compra parcelada</h2>
+      <form id="formConta" class="form-conta">
+        <div class="campo"><label>Descrição (ex: Geladeira)</label><input id="ct-descricao" placeholder="Descrição" required /></div>
+        <div class="campo"><label>Valor total (R$)</label><input id="ct-valor" type="number" step="0.01" min="0.01" placeholder="0,00" required /></div>
+        <div class="campo"><label>Categoria</label><input id="ct-categoria" placeholder="Ex: Cartão" list="cats" /></div>
+        <div class="campo"><label>1º vencimento</label><input id="ct-vencimento" type="date" required /></div>
+        <div class="campo"><label>Nº de parcelas</label><input id="ct-parcelas" type="number" min="1" step="1" value="1" /></div>
+        <button type="submit" class="add">Adicionar</button>
+      </form>
+      <div class="dica">O total é dividido e cada parcela ganha um vencimento mês a mês. Conta única = 1 parcela.</div>
+    </div>
+    <div class="painel">
+      <h2>Suas compras parceladas</h2>
+      <div id="listaContas"></div>
+      <div class="vazio" id="contasVazio">Nenhuma compra parcelada. Adicione uma acima! 👆</div>
+    </div>
+  </section>
+
   <!-- DIA A DIA -->
   <section id="dia">
     <div class="painel">
@@ -158,6 +200,7 @@
         <div class="campo"><label>Categoria</label><input id="d-categoria" placeholder="Ex: Alimentação" list="cats" /></div>
         <button type="submit" class="add">Adicionar</button>
       </form>
+      <div class="dica">💬 Você também pode lançar aqui pelo Telegram, mandando "50 gasolina" pro seu robô.</div>
       <div class="campo" style="max-width:200px;margin-top:8px;"><label>Data (opcional, padrão hoje)</label><input id="d-data" type="date" /></div>
     </div>
     <div class="painel">
@@ -166,28 +209,7 @@
         <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th style="text-align:right">Valor</th><th></th></tr></thead>
         <tbody id="listaDia"></tbody>
       </table>
-      <div class="vazio" id="diaVazio">Nenhum lançamento ainda. Registre seu primeiro gasto acima! 👆</div>
-    </div>
-  </section>
-
-  <!-- CONTAS -->
-  <section id="contas">
-    <div class="painel">
-      <h2>📅 Nova conta a pagar</h2>
-      <form id="formConta" class="form-conta">
-        <div class="campo"><label>Descrição (ex: Cartão, Geladeira)</label><input id="ct-descricao" placeholder="Descrição" required /></div>
-        <div class="campo"><label>Valor total (R$)</label><input id="ct-valor" type="number" step="0.01" min="0.01" placeholder="0,00" required /></div>
-        <div class="campo"><label>Categoria</label><input id="ct-categoria" placeholder="Ex: Cartão" list="cats" /></div>
-        <div class="campo"><label>1º vencimento</label><input id="ct-vencimento" type="date" required /></div>
-        <div class="campo"><label>Nº de parcelas</label><input id="ct-parcelas" type="number" min="1" step="1" value="1" /></div>
-        <button type="submit" class="add">Adicionar</button>
-      </form>
-      <div style="margin-top:8px;color:var(--suave);font-size:.8rem;">Se for parcelado, coloque a quantidade (ex: 10). O total é dividido e cada parcela recebe vencimento mês a mês. Conta única = 1.</div>
-    </div>
-    <div class="painel">
-      <h2>Suas contas</h2>
-      <div id="listaContas"></div>
-      <div class="vazio" id="contasVazio">Nenhuma conta cadastrada. Adicione uma acima! 👆</div>
+      <div class="vazio" id="diaVazio">Nenhum lançamento ainda. 👆</div>
     </div>
   </section>
 </main>
@@ -198,96 +220,55 @@
   <option>Cartão</option><option>Salário</option><option>Contas fixas</option><option>Outros</option>
 </datalist>
 
-<!-- Biblioteca do Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // ============================================================
-  //  CONFIGURAÇÃO — cole aqui os 2 valores do seu projeto Supabase
-  //  (veja o arquivo PASSO-A-PASSO.md). Enquanto não colar, o app
-  //  funciona em "modo local" (dados só neste aparelho).
-  // ============================================================
+  // ===== CONFIG =====
   const SUPABASE_URL = "https://oeugpsczvmvtoxsyhifs.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_-tx9DuSsZbr7ZMDnSH5Y-A_ledu4PGJ";
-
   const configOK = !SUPABASE_URL.includes("COLE_") && !SUPABASE_ANON_KEY.includes("COLE_");
 
-  // ============================================================
-  //  Estado + armazenamento
-  // ============================================================
-  const CHAVE = 'controle_financeiro_v2';
-  let dados = { lancamentos: [], contas: [] };
-  let modo = 'local';           // 'local' ou 'nuvem'
-  let sb = null;                // cliente supabase
-  let userId = null;
-  let timerSync = null;
+  // ===== Estado =====
+  const CHAVE = 'controle_financeiro_v3';
+  let dados = { lancamentos: [], contas: [], fixas: [] };
+  let modo = 'local'; let sb = null; let userId = null; let timerSync = null;
 
   function normalizar(){
-    if(!dados || typeof dados!=='object') dados={lancamentos:[],contas:[]};
+    if(!dados || typeof dados!=='object') dados={};
     if(!Array.isArray(dados.lancamentos)) dados.lancamentos=[];
     if(!Array.isArray(dados.contas)) dados.contas=[];
+    if(!Array.isArray(dados.fixas)) dados.fixas=[];
+    // garante estrutura de pagamentos nas fixas
+    dados.fixas.forEach(f=>{ if(!f.pagamentos||typeof f.pagamentos!=='object') f.pagamentos={}; });
   }
-  function cacheLocalCarregar(){
-    try{ const s=JSON.parse(localStorage.getItem(CHAVE)); if(s) dados=s; }catch(e){}
-    normalizar();
-  }
-  function badge(estado, texto){
-    const b=document.getElementById('syncBadge');
-    b.className='badge '+estado; b.textContent=texto;
-  }
+  function cacheLocalCarregar(){ try{const s=JSON.parse(localStorage.getItem(CHAVE)); if(s) dados=s;}catch(e){} normalizar(); }
+  function badge(estado,texto){ const b=document.getElementById('syncBadge'); b.className='badge '+estado; b.textContent=texto; }
   function salvar(){
-    localStorage.setItem(CHAVE, JSON.stringify(dados)); // cache local sempre
-    if(modo==='nuvem'){
-      badge('sync','sincronizando…');
-      clearTimeout(timerSync);
-      timerSync=setTimeout(salvarNaNuvem, 600);
-    }
+    localStorage.setItem(CHAVE, JSON.stringify(dados));
+    if(modo==='nuvem'){ badge('sync','sincronizando…'); clearTimeout(timerSync); timerSync=setTimeout(salvarNaNuvem,600); }
   }
   async function salvarNaNuvem(){
-    if(!sb || !userId) return;
-    const { error } = await sb.from('financas')
-      .upsert({ user_id:userId, conteudo:dados, atualizado_em:new Date().toISOString() });
-    if(error){ badge('erro','erro ao salvar'); console.error(error); }
-    else { badge('ok','salvo ✓'); }
+    if(!sb||!userId) return;
+    const { error } = await sb.from('financas').upsert({ user_id:userId, conteudo:dados, atualizado_em:new Date().toISOString() });
+    if(error){ badge('erro','erro ao salvar'); console.error(error); } else { badge('ok','salvo ✓'); }
   }
   async function carregarDaNuvem(){
-    const { data, error } = await sb.from('financas')
-      .select('conteudo').eq('user_id', userId).maybeSingle();
+    const { data, error } = await sb.from('financas').select('conteudo').eq('user_id',userId).maybeSingle();
     if(error){ console.error(error); badge('erro','erro ao carregar'); }
-    if(data && data.conteudo){
-      dados = data.conteudo; normalizar();
-    } else {
-      // sem dados na nuvem ainda: sobe o que houver localmente (migração)
-      normalizar(); await salvarNaNuvem();
-    }
+    if(data && data.conteudo){ dados=data.conteudo; normalizar(); }
+    else { normalizar(); await salvarNaNuvem(); }
   }
 
-  // ============================================================
-  //  Utilidades
-  // ============================================================
+  // ===== Utils =====
   const brl = (n) => (n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const hojeISO = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
   const mesDe = (iso) => iso.slice(0,7);
   const fmtData = (iso) => iso.split('-').reverse().join('/');
-  function nomeMes(aaaamm){
-    const [a,m]=aaaamm.split('-');
-    const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    return meses[parseInt(m,10)-1]+'/'+a;
-  }
-  function addMeses(iso,k){
-    let [a,m,d]=iso.split('-').map(Number);
-    let idx=(m-1)+k; let ano=a+Math.floor(idx/12); let mes=((idx%12)+12)%12;
-    let ultimoDia=new Date(ano,mes+1,0).getDate();
-    let dia=Math.min(d,ultimoDia);
-    return ano+'-'+String(mes+1).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
-  }
-  function diasEntre(isoA,isoB){
-    const a=new Date(isoA+'T00:00:00'), b=new Date(isoB+'T00:00:00');
-    return Math.round((b-a)/86400000);
-  }
+  function nomeMes(aaaamm){ const [a,m]=aaaamm.split('-'); const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']; return meses[parseInt(m,10)-1]+'/'+a; }
+  function addMeses(iso,k){ let [a,m,d]=iso.split('-').map(Number); let idx=(m-1)+k; let ano=a+Math.floor(idx/12); let mes=((idx%12)+12)%12; let ult=new Date(ano,mes+1,0).getDate(); let dia=Math.min(d,ult); return ano+'-'+String(mes+1).padStart(2,'0')+'-'+String(dia).padStart(2,'0'); }
+  function diasEntre(a,b){ const x=new Date(a+'T00:00:00'), y=new Date(b+'T00:00:00'); return Math.round((y-x)/86400000); }
+  function vencFixaNoMes(dia, aaaamm){ const [a,m]=aaaamm.split('-').map(Number); const ult=new Date(a,m,0).getDate(); const d=Math.min(dia,ult); return aaaamm+'-'+String(d).padStart(2,'0'); }
 
-  // ============================================================
-  //  Abas
-  // ============================================================
+  // ===== Abas =====
   document.querySelectorAll('.aba').forEach(aba=>{
     aba.onclick=()=>{
       document.querySelectorAll('.aba').forEach(a=>a.classList.remove('ativa'));
@@ -297,101 +278,116 @@
     };
   });
 
-  // ============================================================
-  //  Filtro de meses
-  // ============================================================
+  // ===== Filtro meses =====
   function todosOsMeses(){
     const set=new Set();
     dados.lancamentos.forEach(l=>set.add(mesDe(l.data)));
-    dados.contas.forEach(c=>c.parcelas.forEach(p=>{ if(p.pago && p.pagoEm) set.add(mesDe(p.pagoEm)); }));
+    dados.contas.forEach(c=>c.parcelas.forEach(p=>{ if(p.pago&&p.pagoEm) set.add(mesDe(p.pagoEm)); }));
+    dados.fixas.forEach(f=>Object.keys(f.pagamentos||{}).forEach(m=>set.add(m)));
+    set.add(mesDe(hojeISO()));
     return [...set].sort().reverse();
   }
   function atualizarFiltroMeses(){
-    const sel=document.getElementById('filtroMes');
-    const atual=sel.value;
-    const meses=todosOsMeses();
+    const sel=document.getElementById('filtroMes'); const atual=sel.value; const meses=todosOsMeses();
     sel.innerHTML='<option value="todos">Todos</option>'+meses.map(m=>`<option value="${m}">${nomeMes(m)}</option>`).join('');
     if([...sel.options].some(o=>o.value===atual)) sel.value=atual;
   }
 
-  // ============================================================
-  //  Render: Resumo
-  // ============================================================
+  // ===== Resumo =====
   function renderResumo(){
     const filtro=document.getElementById('filtroMes').value;
     const noMes=(iso)=> filtro==='todos' || mesDe(iso)===filtro;
-    const receitas=dados.lancamentos.filter(l=>l.tipo==='receita'&&noMes(l.data)).reduce((s,l)=>s+l.valor,0);
-    let despesas=dados.lancamentos.filter(l=>l.tipo==='despesa'&&noMes(l.data)).reduce((s,l)=>s+l.valor,0);
     const porCat={};
-    dados.lancamentos.filter(l=>l.tipo==='despesa'&&noMes(l.data)).forEach(l=>{porCat[l.categoria]=(porCat[l.categoria]||0)+l.valor;});
+    let receitas=0, despesas=0;
+    // dia a dia
+    dados.lancamentos.forEach(l=>{
+      if(!noMes(l.data)) return;
+      if(l.tipo==='receita') receitas+=l.valor;
+      else { despesas+=l.valor; porCat[l.categoria]=(porCat[l.categoria]||0)+l.valor; }
+    });
+    // parceladas pagas
     dados.contas.forEach(c=>c.parcelas.forEach(p=>{
-      if(p.pago && p.pagoEm && (filtro==='todos'||mesDe(p.pagoEm)===filtro)){
-        despesas+=p.valor; porCat[c.categoria]=(porCat[c.categoria]||0)+p.valor;
-      }
+      if(p.pago&&p.pagoEm&&(filtro==='todos'||mesDe(p.pagoEm)===filtro)){ despesas+=p.valor; porCat[c.categoria]=(porCat[c.categoria]||0)+p.valor; }
+    }));
+    // fixas pagas
+    dados.fixas.forEach(f=>Object.entries(f.pagamentos||{}).forEach(([mes,pg])=>{
+      if(filtro==='todos'||mes===filtro){ const v=(pg&&pg.valor!=null)?pg.valor:f.valor; despesas+=v; porCat[f.categoria]=(porCat[f.categoria]||0)+v; }
     }));
     const saldo=receitas-despesas;
     document.getElementById('c-receitas').textContent=brl(receitas);
     document.getElementById('c-despesas').textContent=brl(despesas);
-    const se=document.getElementById('c-saldo'); se.textContent=brl(saldo);
-    se.className='valor '+(saldo>=0?'azul':'vermelho');
+    const se=document.getElementById('c-saldo'); se.textContent=brl(saldo); se.className='valor '+(saldo>=0?'azul':'vermelho');
 
     const cats=Object.entries(porCat).sort((a,b)=>b[1]-a[1]);
     const pc=document.getElementById('painelCategorias'), barras=document.getElementById('barras');
-    if(cats.length){
-      pc.style.display='block';
-      const max=Math.max(...cats.map(c=>c[1]));
-      barras.innerHTML=cats.map(([nome,val])=>`
-        <div class="barra-linha">
-          <div class="barra-nome">${nome}</div>
-          <div class="barra-fundo"><div class="barra-fill" style="width:${(val/max*100).toFixed(0)}%"></div></div>
-          <div class="barra-val vermelho">${brl(val)}</div>
-        </div>`).join('');
+    if(cats.length){ pc.style.display='block'; const max=Math.max(...cats.map(c=>c[1]));
+      barras.innerHTML=cats.map(([nome,val])=>`<div class="barra-linha"><div class="barra-nome">${nome}</div><div class="barra-fundo"><div class="barra-fill" style="width:${(val/max*100).toFixed(0)}%"></div></div><div class="barra-val vermelho">${brl(val)}</div></div>`).join('');
     } else pc.style.display='none';
 
-    const hoje=hojeISO();
-    const pendentes=[];
-    dados.contas.forEach(c=>c.parcelas.forEach(p=>{ if(!p.pago) pendentes.push({conta:c,p}); }));
-    pendentes.sort((a,b)=>a.p.vencimento.localeCompare(b.p.vencimento));
+    // Alertas (sempre baseados em hoje/mês atual)
+    const hoje=hojeISO(); const mesAtual=mesDe(hoje);
+    const pend=[];
+    dados.contas.forEach(c=>c.parcelas.forEach(p=>{ if(!p.pago) pend.push({tipo:'Parcela', nome:c.descricao+(c.parcelas.length>1?` (${p.n}/${c.parcelas.length})`:''), venc:p.vencimento, valor:p.valor}); }));
+    dados.fixas.forEach(f=>{ if(!f.pagamentos[mesAtual]){ pend.push({tipo:'Fixa', nome:f.descricao, venc:vencFixaNoMes(f.dia,mesAtual), valor:f.valor}); } });
+    pend.sort((a,b)=>a.venc.localeCompare(b.venc));
+    const rel=pend.filter(x=>diasEntre(hoje,x.venc)<=30);
     const alertas=document.getElementById('alertas'), av=document.getElementById('alertasVazio');
-    const relevantes=pendentes.filter(x=>diasEntre(hoje,x.p.vencimento)<=30);
-    if(relevantes.length){
-      av.style.display='none';
-      alertas.innerHTML=relevantes.map(({conta,p})=>{
-        const dias=diasEntre(hoje,p.vencimento);
-        const vencida=dias<0; const cls=vencida?'venc':'prox';
-        let quando = dias<0 ? `Venceu há ${Math.abs(dias)} dia(s)` : (dias===0?'Vence hoje':`Vence em ${dias} dia(s)`);
-        const info = conta.parcelas.length>1 ? ` (parcela ${p.n}/${conta.parcelas.length})` : '';
-        return `<div class="alerta ${cls}">
-          <span><strong>${conta.descricao}</strong>${info} — ${fmtData(p.vencimento)} · ${quando}</span>
-          <span class="${vencida?'vermelho':'amarelo'}" style="font-weight:700;">${brl(p.valor)}</span></div>`;
+    if(rel.length){ av.style.display='none';
+      alertas.innerHTML=rel.map(x=>{ const dias=diasEntre(hoje,x.venc); const vencida=dias<0; const cls=vencida?'venc':'prox';
+        const quando= dias<0?`Venceu há ${Math.abs(dias)} dia(s)`:(dias===0?'Vence hoje':`Vence em ${dias} dia(s)`);
+        return `<div class="alerta ${cls}"><span>📌 <strong>${x.nome}</strong> <span class="prog">[${x.tipo}]</span> — ${fmtData(x.venc)} · ${quando}</span><span class="${vencida?'vermelho':'amarelo'}" style="font-weight:700;">${brl(x.valor)}</span></div>`;
       }).join('');
     } else { alertas.innerHTML=''; av.style.display='block'; }
   }
 
-  // ============================================================
-  //  Render: Dia a dia
-  // ============================================================
-  function renderDia(){
-    const tb=document.getElementById('listaDia'), vazio=document.getElementById('diaVazio');
-    const arr=[...dados.lancamentos].sort((a,b)=>b.data.localeCompare(a.data)||b.id-a.id);
-    tb.innerHTML=''; vazio.style.display=arr.length?'none':'block';
-    for(const l of arr){
-      const sinal=l.tipo==='receita'?'+':'−'; const cor=l.tipo==='receita'?'verde':'vermelho';
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${fmtData(l.data)}</td><td>${l.descricao}</td><td>${l.categoria}</td>
-        <td><span class="tag ${l.tipo}">${l.tipo}</span></td>
-        <td style="text-align:right" class="${cor}">${sinal} ${brl(l.valor)}</td>
-        <td style="text-align:right"><button class="excluir" data-id="${l.id}" title="Excluir">✕</button></td>`;
-      tb.appendChild(tr);
-    }
-    tb.querySelectorAll('.excluir').forEach(b=>{
-      b.onclick=()=>{ dados.lancamentos=dados.lancamentos.filter(l=>l.id!==Number(b.dataset.id)); salvar(); atualizarTudo(); };
+  // ===== Contas fixas =====
+  function renderFixas(){
+    const mesAtual=mesDe(hojeISO());
+    document.getElementById('fx-mesref').textContent='Referência: '+nomeMes(mesAtual);
+    const wrap=document.getElementById('listaFixas'), vazio=document.getElementById('fixasVazio');
+    vazio.style.display=dados.fixas.length?'none':'block';
+    const hoje=hojeISO();
+    wrap.innerHTML=dados.fixas.map(f=>{
+      const venc=vencFixaNoMes(f.dia,mesAtual);
+      const pg=f.pagamentos[mesAtual];
+      let status,cls,valorMostrar=f.valor;
+      if(pg){ status='Paga'; cls='pago'; valorMostrar=(pg.valor!=null?pg.valor:f.valor); }
+      else if(diasEntre(hoje,venc)<0){ status='Vencida'; cls='vencida'; }
+      else { status='Pendente'; cls='pendente'; }
+      const acao = pg
+        ? `<button class="btn-mini" data-fx="${f.id}" data-acao="desmarcar">Desfazer</button>`
+        : `<button class="btn-mini pagar" data-fx="${f.id}" data-acao="pagar">Marcar paga</button>`;
+      return `<div class="conta-box"><div class="conta-cab">
+        <strong>${f.descricao}</strong>
+        <span class="prog">${f.categoria} · vence dia ${f.dia} · ${brl(valorMostrar)}</span>
+        <button class="excluir" data-fx-del="${f.id}" title="Excluir conta fixa">✕</button></div>
+        <table><tbody><tr>
+          <td>Este mês (${nomeMes(mesAtual)})</td>
+          <td>${fmtData(venc)}</td>
+          <td><span class="tag ${cls}">${status}</span></td>
+          <td style="text-align:right">${brl(valorMostrar)}</td>
+          <td style="text-align:right">${acao}</td>
+        </tr></tbody></table></div>`;
+    }).join('');
+    wrap.querySelectorAll('[data-acao]').forEach(b=>{
+      b.onclick=()=>{
+        const f=dados.fixas.find(x=>x.id===Number(b.dataset.fx)); if(!f) return;
+        if(b.dataset.acao==='pagar'){
+          const entrada=prompt(`Valor pago de "${f.descricao}" neste mês (R$):`, String(f.valor));
+          if(entrada===null) return;
+          let v=parseFloat(String(entrada).replace('.','').replace(',','.'));
+          if(isNaN(v)||v<=0) v=f.valor;
+          f.pagamentos[mesAtual]={ data:hojeISO(), valor:v };
+        } else { delete f.pagamentos[mesAtual]; }
+        salvar(); atualizarTudo();
+      };
+    });
+    wrap.querySelectorAll('[data-fx-del]').forEach(b=>{
+      b.onclick=()=>{ dados.fixas=dados.fixas.filter(f=>f.id!==Number(b.dataset.fxDel)); salvar(); atualizarTudo(); };
     });
   }
 
-  // ============================================================
-  //  Render: Contas
-  // ============================================================
+  // ===== Parceladas =====
   function renderContas(){
     const wrap=document.getElementById('listaContas'), vazio=document.getElementById('contasVazio');
     vazio.style.display=dados.contas.length?'none':'block';
@@ -401,143 +397,101 @@
       const totalValor=c.parcelas.reduce((s,p)=>s+p.valor,0);
       const linhas=c.parcelas.map(p=>{
         let status,cls;
-        if(p.pago){status='Paga';cls='pago';}
-        else if(diasEntre(hoje,p.vencimento)<0){status='Vencida';cls='vencida';}
-        else {status='Pendente';cls='pendente';}
-        const rotulo = total>1 ? `Parcela ${p.n}/${total}` : 'Pagamento único';
-        const acao = p.pago
-          ? `<button class="btn-mini" data-conta="${c.id}" data-parc="${p.n}" data-acao="desmarcar">Desfazer</button>`
-          : `<button class="btn-mini pagar" data-conta="${c.id}" data-parc="${p.n}" data-acao="pagar">Marcar paga</button>`;
-        return `<tr><td>${rotulo}</td><td>${fmtData(p.vencimento)}</td>
-          <td><span class="tag ${cls}">${status}</span></td>
-          <td style="text-align:right">${brl(p.valor)}</td>
-          <td style="text-align:right">${acao}</td></tr>`;
+        if(p.pago){status='Paga';cls='pago';} else if(diasEntre(hoje,p.vencimento)<0){status='Vencida';cls='vencida';} else {status='Pendente';cls='pendente';}
+        const rotulo=total>1?`Parcela ${p.n}/${total}`:'Pagamento único';
+        const acao=p.pago?`<button class="btn-mini" data-conta="${c.id}" data-parc="${p.n}" data-acao="desmarcar">Desfazer</button>`:`<button class="btn-mini pagar" data-conta="${c.id}" data-parc="${p.n}" data-acao="pagar">Marcar paga</button>`;
+        return `<tr><td>${rotulo}</td><td>${fmtData(p.vencimento)}</td><td><span class="tag ${cls}">${status}</span></td><td style="text-align:right">${brl(p.valor)}</td><td style="text-align:right">${acao}</td></tr>`;
       }).join('');
-      return `<div class="conta-box">
-        <div class="conta-cab"><strong>${c.descricao}</strong>
-          <span class="prog">${c.categoria} · ${pagas}/${total} paga(s) · total ${brl(totalValor)}</span>
-          <button class="excluir" data-conta-del="${c.id}" title="Excluir conta">✕</button></div>
-        <table><tbody>${linhas}</tbody></table></div>`;
+      return `<div class="conta-box"><div class="conta-cab"><strong>${c.descricao}</strong><span class="prog">${c.categoria} · ${pagas}/${total} paga(s) · total ${brl(totalValor)}</span><button class="excluir" data-conta-del="${c.id}" title="Excluir">✕</button></div><table><tbody>${linhas}</tbody></table></div>`;
     }).join('');
     wrap.querySelectorAll('[data-acao]').forEach(b=>{
-      b.onclick=()=>{
-        const c=dados.contas.find(x=>x.id===Number(b.dataset.conta)); if(!c) return;
-        const p=c.parcelas.find(x=>x.n===Number(b.dataset.parc)); if(!p) return;
-        if(b.dataset.acao==='pagar'){ p.pago=true; p.pagoEm=hojeISO(); } else { p.pago=false; p.pagoEm=null; }
-        salvar(); atualizarTudo();
-      };
+      b.onclick=()=>{ const c=dados.contas.find(x=>x.id===Number(b.dataset.conta)); if(!c) return; const p=c.parcelas.find(x=>x.n===Number(b.dataset.parc)); if(!p) return;
+        if(b.dataset.acao==='pagar'){ p.pago=true; p.pagoEm=hojeISO(); } else { p.pago=false; p.pagoEm=null; } salvar(); atualizarTudo(); };
     });
-    wrap.querySelectorAll('[data-conta-del]').forEach(b=>{
-      b.onclick=()=>{ dados.contas=dados.contas.filter(c=>c.id!==Number(b.dataset.contaDel)); salvar(); atualizarTudo(); };
-    });
+    wrap.querySelectorAll('[data-conta-del]').forEach(b=>{ b.onclick=()=>{ dados.contas=dados.contas.filter(c=>c.id!==Number(b.dataset.contaDel)); salvar(); atualizarTudo(); }; });
   }
 
-  function atualizarTudo(){ atualizarFiltroMeses(); renderResumo(); renderDia(); renderContas(); }
+  // ===== Dia a dia =====
+  function renderDia(){
+    const tb=document.getElementById('listaDia'), vazio=document.getElementById('diaVazio');
+    const arr=[...dados.lancamentos].sort((a,b)=>b.data.localeCompare(a.data)||b.id-a.id);
+    tb.innerHTML=''; vazio.style.display=arr.length?'none':'block';
+    for(const l of arr){ const sinal=l.tipo==='receita'?'+':'−'; const cor=l.tipo==='receita'?'verde':'vermelho';
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${fmtData(l.data)}</td><td>${l.descricao}</td><td>${l.categoria}</td><td><span class="tag ${l.tipo}">${l.tipo}</span></td><td style="text-align:right" class="${cor}">${sinal} ${brl(l.valor)}</td><td style="text-align:right"><button class="excluir" data-id="${l.id}" title="Excluir">✕</button></td>`;
+      tb.appendChild(tr);
+    }
+    tb.querySelectorAll('.excluir').forEach(b=>{ b.onclick=()=>{ dados.lancamentos=dados.lancamentos.filter(l=>l.id!==Number(b.dataset.id)); salvar(); atualizarTudo(); }; });
+  }
 
-  // ============================================================
-  //  Formulários
-  // ============================================================
+  function atualizarTudo(){ atualizarFiltroMeses(); renderResumo(); renderFixas(); renderContas(); renderDia(); }
+
+  // ===== Formulários =====
   document.getElementById('formDia').onsubmit=(e)=>{
-    e.preventDefault();
-    const valor=parseFloat(document.getElementById('d-valor').value);
-    if(!(valor>0)) return;
+    e.preventDefault(); const valor=parseFloat(document.getElementById('d-valor').value); if(!(valor>0)) return;
     const dataEscolhida=document.getElementById('d-data').value || hojeISO();
-    dados.lancamentos.push({
-      id:Date.now(),
-      descricao:document.getElementById('d-descricao').value.trim(),
-      valor, tipo:document.getElementById('d-tipo').value,
-      categoria:document.getElementById('d-categoria').value.trim()||'Outros',
-      data:dataEscolhida,
-    });
+    dados.lancamentos.push({ id:Date.now(), descricao:document.getElementById('d-descricao').value.trim(), valor, tipo:document.getElementById('d-tipo').value, categoria:document.getElementById('d-categoria').value.trim()||'Outros', data:dataEscolhida });
     salvar(); e.target.reset(); document.getElementById('d-data').value=''; atualizarTudo();
   };
-
-  document.getElementById('formConta').onsubmit=(e)=>{
-    e.preventDefault();
-    const total=parseFloat(document.getElementById('ct-valor').value);
-    const nParc=Math.max(1,parseInt(document.getElementById('ct-parcelas').value||'1',10));
-    const venc1=document.getElementById('ct-vencimento').value;
-    if(!(total>0)||!venc1) return;
-    const base=Math.floor((total/nParc)*100)/100;
-    const parcelas=[]; let soma=0;
-    for(let i=1;i<=nParc;i++){
-      let valor=(i===nParc)?Math.round((total-soma)*100)/100:base; soma+=base;
-      parcelas.push({ n:i, valor, vencimento:addMeses(venc1,i-1), pago:false, pagoEm:null });
-    }
-    dados.contas.push({
-      id:Date.now(),
-      descricao:document.getElementById('ct-descricao').value.trim(),
-      categoria:document.getElementById('ct-categoria').value.trim()||'Contas fixas',
-      parcelas,
-    });
-    salvar(); e.target.reset(); document.getElementById('ct-parcelas').value='1';
-    atualizarTudo(); document.querySelector('.aba[data-sec="contas"]').click();
+  document.getElementById('formFixa').onsubmit=(e)=>{
+    e.preventDefault(); const valor=parseFloat(document.getElementById('fx-valor').value); const dia=parseInt(document.getElementById('fx-dia').value,10);
+    if(!(valor>0)||!(dia>=1&&dia<=31)) return;
+    dados.fixas.push({ id:Date.now(), descricao:document.getElementById('fx-descricao').value.trim(), valor, categoria:document.getElementById('fx-categoria').value.trim()||'Contas fixas', dia, pagamentos:{} });
+    salvar(); e.target.reset(); atualizarTudo();
   };
-
+  document.getElementById('formConta').onsubmit=(e)=>{
+    e.preventDefault(); const total=parseFloat(document.getElementById('ct-valor').value); const nParc=Math.max(1,parseInt(document.getElementById('ct-parcelas').value||'1',10)); const venc1=document.getElementById('ct-vencimento').value;
+    if(!(total>0)||!venc1) return;
+    const base=Math.floor((total/nParc)*100)/100; const parcelas=[]; let soma=0;
+    for(let i=1;i<=nParc;i++){ let valor=(i===nParc)?Math.round((total-soma)*100)/100:base; soma+=base; parcelas.push({ n:i, valor, vencimento:addMeses(venc1,i-1), pago:false, pagoEm:null }); }
+    dados.contas.push({ id:Date.now(), descricao:document.getElementById('ct-descricao').value.trim(), categoria:document.getElementById('ct-categoria').value.trim()||'Cartão', parcelas });
+    salvar(); e.target.reset(); document.getElementById('ct-parcelas').value='1'; atualizarTudo();
+  };
   document.getElementById('filtroMes').onchange=renderResumo;
 
-  // ============================================================
-  //  Login / Autenticação (modo nuvem)
-  // ============================================================
+  // ===== Login / Auth =====
   function msgLogin(txt,tipo){ const m=document.getElementById('loginMsg'); m.textContent=txt; m.className='login-msg '+(tipo||''); }
-
   async function entrarNoApp(user){
     userId=user.id; modo='nuvem';
     document.getElementById('loginOverlay').style.display='none';
     document.getElementById('userbar').style.display='flex';
     document.getElementById('userEmail').textContent=user.email;
-    badge('sync','carregando…');
-    await carregarDaNuvem();
-    badge('ok','salvo ✓');
-    atualizarTudo();
+    badge('sync','carregando…'); await carregarDaNuvem(); badge('ok','salvo ✓'); atualizarTudo();
   }
-
   function mostrarLogin(){ document.getElementById('loginOverlay').style.display='flex'; }
-
   async function iniciarNuvem(){
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
     const { data:{ session } } = await sb.auth.getSession();
-    if(session && session.user){ await entrarNoApp(session.user); }
-    else { mostrarLogin(); atualizarTudo(); }
-
+    if(session&&session.user){ await entrarNoApp(session.user); } else { mostrarLogin(); atualizarTudo(); }
     document.getElementById('btnEntrar').onclick=async ()=>{
-      const email=document.getElementById('lg-email').value.trim();
-      const senha=document.getElementById('lg-senha').value;
-      if(!email||!senha){ msgLogin('Preencha e-mail e senha.','erro'); return; }
-      msgLogin('Entrando…');
+      const email=document.getElementById('lg-email').value.trim(); const senha=document.getElementById('lg-senha').value;
+      if(!email||!senha){ msgLogin('Preencha e-mail e senha.','erro'); return; } msgLogin('Entrando…');
       const { data, error } = await sb.auth.signInWithPassword({ email, password:senha });
-      if(error){ msgLogin('Não deu certo: '+error.message,'erro'); return; }
-      await entrarNoApp(data.user);
+      if(error){ msgLogin('Não deu certo: '+error.message,'erro'); return; } await entrarNoApp(data.user);
     };
     document.getElementById('btnCriar').onclick=async ()=>{
-      const email=document.getElementById('lg-email').value.trim();
-      const senha=document.getElementById('lg-senha').value;
-      if(!email||senha.length<6){ msgLogin('E-mail válido e senha de 6+ caracteres.','erro'); return; }
-      msgLogin('Criando conta…');
+      const email=document.getElementById('lg-email').value.trim(); const senha=document.getElementById('lg-senha').value;
+      if(!email||senha.length<6){ msgLogin('E-mail válido e senha de 6+ caracteres.','erro'); return; } msgLogin('Criando conta…');
       const { data, error } = await sb.auth.signUp({ email, password:senha });
       if(error){ msgLogin('Erro: '+error.message,'erro'); return; }
-      if(data.session && data.user){ await entrarNoApp(data.user); }
-      else { msgLogin('Conta criada! Se pedir, confirme pelo e-mail e depois clique em Entrar.','ok'); }
+      if(data.session&&data.user){ await entrarNoApp(data.user); } else { msgLogin('Conta criada! Se pedir, confirme pelo e-mail e clique em Entrar.','ok'); }
     };
     document.getElementById('btnSair').onclick=async ()=>{ await sb.auth.signOut(); location.reload(); };
   }
 
-  // ============================================================
-  //  Início
-  // ============================================================
+  // ===== Recarrega ao voltar pro app (pega lançamentos do Telegram) =====
+  document.addEventListener('visibilitychange', async ()=>{
+    if(document.visibilityState==='visible' && modo==='nuvem' && userId){
+      await carregarDaNuvem(); atualizarTudo();
+    }
+  });
+
+  // ===== Início =====
   (function iniciar(){
     cacheLocalCarregar();
-    if(configOK && window.supabase){
-      iniciarNuvem();
-    } else {
-      modo='local';
-      document.getElementById('avisoLocal').style.display='block';
-      badge('local','modo local');
-      document.getElementById('userbar').style.display='flex';
-      document.getElementById('userEmail').textContent='(sem login)';
-      document.getElementById('btnSair').style.display='none';
-      atualizarTudo();
-    }
+    if(configOK && window.supabase){ iniciarNuvem(); }
+    else { modo='local'; document.getElementById('avisoLocal').style.display='block'; badge('local','modo local');
+      document.getElementById('userbar').style.display='flex'; document.getElementById('userEmail').textContent='(sem login)'; document.getElementById('btnSair').style.display='none'; atualizarTudo(); }
   })();
 </script>
 </body>
