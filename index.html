@@ -34,6 +34,13 @@
   .card{background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:16px;text-align:center;}
   .card small{color:var(--suave);text-transform:uppercase;font-size:.7rem;letter-spacing:.5px;}
   .card .valor{font-size:1.35rem;font-weight:700;margin-top:6px;}
+  .cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .mini{background:var(--card2);border:1px solid var(--borda);border-radius:10px;padding:12px;text-align:center;}
+  .mini small{color:var(--suave);font-size:.66rem;text-transform:uppercase;letter-spacing:.4px;display:block;}
+  .mini .v{font-size:1.1rem;font-weight:700;margin-top:4px;}
+  .mini .q{font-size:.7rem;color:var(--suave);margin-top:2px;}
+  .grupo-h{font-size:.78rem;font-weight:700;margin:14px 0 6px;text-transform:uppercase;letter-spacing:.4px;}
+  .item-pagar{white-space:nowrap;}
   .verde{color:var(--verde);} .vermelho{color:var(--vermelho);} .azul{color:var(--azul);} .amarelo{color:var(--amarelo);} .roxo{color:var(--roxo);}
   .painel{background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:16px;margin-bottom:18px;}
   .painel h2{margin:0 0 12px;font-size:1rem;display:flex;align-items:center;gap:8px;}
@@ -138,9 +145,14 @@
       <div class="card"><small>Saldo do mês</small><div class="valor azul" id="c-saldo">R$ 0,00</div></div>
     </div>
     <div class="painel">
-      <h2>⚠️ Contas a resolver</h2>
-      <div id="alertas"></div>
-      <div class="vazio" id="alertasVazio">Nenhuma conta pendente. Tudo em dia! ✅</div>
+      <h2>💳 Situação das contas (mês atual)</h2>
+      <div class="cards3">
+        <div class="mini"><small>Já pago no mês</small><div class="v verde" id="s-pago">R$ 0,00</div><div class="q" id="s-pago-q">0 conta(s)</div></div>
+        <div class="mini"><small>A pagar no mês</small><div class="v amarelo" id="s-apagar">R$ 0,00</div><div class="q" id="s-apagar-q">0 conta(s)</div></div>
+        <div class="mini"><small>Atrasadas (meses ant.)</small><div class="v vermelho" id="s-atras">R$ 0,00</div><div class="q" id="s-atras-q">0 conta(s)</div></div>
+      </div>
+      <div id="listaSituacao" style="margin-top:12px;"></div>
+      <div class="vazio" id="situacaoVazio">Nenhuma conta a acompanhar ainda. Cadastre contas fixas ou parceladas. 👍</div>
     </div>
     <div class="painel" id="painelCategorias" style="display:none">
       <h2>Despesas por categoria (no mês)</h2>
@@ -238,7 +250,10 @@
     if(!Array.isArray(dados.contas)) dados.contas=[];
     if(!Array.isArray(dados.fixas)) dados.fixas=[];
     // garante estrutura de pagamentos nas fixas
-    dados.fixas.forEach(f=>{ if(!f.pagamentos||typeof f.pagamentos!=='object') f.pagamentos={}; });
+    dados.fixas.forEach(f=>{
+      if(!f.pagamentos||typeof f.pagamentos!=='object') f.pagamentos={};
+      if(!f.desde){ const ms=Object.keys(f.pagamentos).sort(); f.desde = ms.length?ms[0]:mesDe(hojeISO()); }
+    });
   }
   function cacheLocalCarregar(){ try{const s=JSON.parse(localStorage.getItem(CHAVE)); if(s) dados=s;}catch(e){} normalizar(); }
   function badge(estado,texto){ const b=document.getElementById('syncBadge'); b.className='badge '+estado; b.textContent=texto; }
@@ -324,20 +339,92 @@
       barras.innerHTML=cats.map(([nome,val])=>`<div class="barra-linha"><div class="barra-nome">${nome}</div><div class="barra-fundo"><div class="barra-fill" style="width:${(val/max*100).toFixed(0)}%"></div></div><div class="barra-val vermelho">${brl(val)}</div></div>`).join('');
     } else pc.style.display='none';
 
-    // Alertas (sempre baseados em hoje/mês atual)
-    const hoje=hojeISO(); const mesAtual=mesDe(hoje);
-    const pend=[];
-    dados.contas.forEach(c=>c.parcelas.forEach(p=>{ if(!p.pago) pend.push({tipo:'Parcela', nome:c.descricao+(c.parcelas.length>1?` (${p.n}/${c.parcelas.length})`:''), venc:p.vencimento, valor:p.valor}); }));
-    dados.fixas.forEach(f=>{ if(!f.pagamentos[mesAtual]){ pend.push({tipo:'Fixa', nome:f.descricao, venc:vencFixaNoMes(f.dia,mesAtual), valor:f.valor}); } });
-    pend.sort((a,b)=>a.venc.localeCompare(b.venc));
-    const rel=pend.filter(x=>diasEntre(hoje,x.venc)<=30);
-    const alertas=document.getElementById('alertas'), av=document.getElementById('alertasVazio');
-    if(rel.length){ av.style.display='none';
-      alertas.innerHTML=rel.map(x=>{ const dias=diasEntre(hoje,x.venc); const vencida=dias<0; const cls=vencida?'venc':'prox';
-        const quando= dias<0?`Venceu há ${Math.abs(dias)} dia(s)`:(dias===0?'Vence hoje':`Vence em ${dias} dia(s)`);
-        return `<div class="alerta ${cls}"><span>📌 <strong>${x.nome}</strong> <span class="prog">[${x.tipo}]</span> — ${fmtData(x.venc)} · ${quando}</span><span class="${vencida?'vermelho':'amarelo'}" style="font-weight:700;">${brl(x.valor)}</span></div>`;
-      }).join('');
-    } else { alertas.innerHTML=''; av.style.display='block'; }
+    renderSituacao();
+  }
+
+  // ===== Situação: pago / a pagar / atrasadas (meses anteriores) =====
+  function proxMes(m){ let [a,mm]=m.split('-').map(Number); mm++; if(mm>12){mm=1;a++;} return a+'-'+String(mm).padStart(2,'0'); }
+  function coletarSituacao(){
+    const mesAtual=mesDe(hojeISO());
+    const atrasadas=[], aPagar=[], pagas=[];
+    dados.contas.forEach(c=>c.parcelas.forEach(p=>{
+      const nome=c.descricao+(c.parcelas.length>1?` (${p.n}/${c.parcelas.length})`:'');
+      if(p.pago){ if(p.pagoEm&&mesDe(p.pagoEm)===mesAtual) pagas.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,cId:c.id,pn:p.n}); }
+      else { const mv=mesDe(p.vencimento);
+        if(mv<mesAtual) atrasadas.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,ref:mv,cId:c.id,pn:p.n});
+        else if(mv===mesAtual) aPagar.push({kind:'parcela',nome,valor:p.valor,venc:p.vencimento,cId:c.id,pn:p.n});
+      }
+    }));
+    dados.fixas.forEach(f=>{
+      let m=f.desde||mesAtual; let guarda=0;
+      while(m<mesAtual && guarda<600){ if(!f.pagamentos[m]) atrasadas.push({kind:'fixa',nome:f.descricao,valor:f.valor,venc:vencFixaNoMes(f.dia,m),ref:m,fId:f.id,mesRef:m}); m=proxMes(m); guarda++; }
+      if(f.pagamentos[mesAtual]){ const pg=f.pagamentos[mesAtual]; pagas.push({kind:'fixa',nome:f.descricao,valor:(pg&&pg.valor!=null?pg.valor:f.valor),venc:vencFixaNoMes(f.dia,mesAtual),fId:f.id,mesRef:mesAtual}); }
+      else aPagar.push({kind:'fixa',nome:f.descricao,valor:f.valor,venc:vencFixaNoMes(f.dia,mesAtual),fId:f.id,mesRef:mesAtual});
+    });
+    atrasadas.sort((a,b)=>a.venc.localeCompare(b.venc));
+    aPagar.sort((a,b)=>a.venc.localeCompare(b.venc));
+    pagas.sort((a,b)=>a.venc.localeCompare(b.venc));
+    return {atrasadas,aPagar,pagas};
+  }
+  function renderSituacao(){
+    const {atrasadas,aPagar,pagas}=coletarSituacao();
+    const soma=(a)=>a.reduce((s,x)=>s+x.valor,0);
+    document.getElementById('s-pago').textContent=brl(soma(pagas));
+    document.getElementById('s-pago-q').textContent=pagas.length+' conta(s)';
+    document.getElementById('s-apagar').textContent=brl(soma(aPagar));
+    document.getElementById('s-apagar-q').textContent=aPagar.length+' conta(s)';
+    document.getElementById('s-atras').textContent=brl(soma(atrasadas));
+    document.getElementById('s-atras-q').textContent=atrasadas.length+' conta(s)';
+
+    const hoje=hojeISO();
+    const wrap=document.getElementById('listaSituacao'), vazio=document.getElementById('situacaoVazio');
+    const total=atrasadas.length+aPagar.length+pagas.length;
+    vazio.style.display=total?'none':'block';
+    const linha=(x,grupo)=>{
+      const dias=diasEntre(hoje,x.venc);
+      let quando= grupo==='pagas' ? '' : (dias<0?`venceu há ${Math.abs(dias)}d`:(dias===0?'vence hoje':`vence em ${dias}d`));
+      const refTxt = x.ref ? ` <span class="prog">(${nomeMes(x.ref)})</span>` : '';
+      const kindTag = x.kind==='fixa'?'Fixa':'Parcela';
+      let acao;
+      if(grupo==='pagas'){
+        acao = x.kind==='fixa'
+          ? `<button class="btn-mini item-pagar" data-act="desfazer" data-pk="fixa" data-f="${x.fId}" data-mes="${x.mesRef}">Desfazer</button>`
+          : `<button class="btn-mini item-pagar" data-act="desfazer" data-pk="parcela" data-c="${x.cId}" data-pn="${x.pn}">Desfazer</button>`;
+      } else {
+        acao = x.kind==='fixa'
+          ? `<button class="btn-mini pagar item-pagar" data-act="pagar" data-pk="fixa" data-f="${x.fId}" data-mes="${x.mesRef}">Marcar paga</button>`
+          : `<button class="btn-mini pagar item-pagar" data-act="pagar" data-pk="parcela" data-c="${x.cId}" data-pn="${x.pn}">Marcar paga</button>`;
+      }
+      const clsAl = grupo==='atrasadas'?'venc':(grupo==='aPagar'?'prox':'');
+      const estilo = grupo==='pagas'?'style="background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.3);"':'';
+      const cor = grupo==='atrasadas'?'vermelho':(grupo==='aPagar'?'amarelo':'verde');
+      return `<div class="alerta ${clsAl}" ${estilo}><span><strong>${x.nome}</strong> <span class="prog">[${kindTag}]</span>${refTxt} — ${fmtData(x.venc)}${quando?(' · '+quando):''}</span><span style="display:flex;align-items:center;gap:10px;"><span class="${cor}" style="font-weight:700;">${brl(x.valor)}</span>${acao}</span></div>`;
+    };
+    let html='';
+    if(atrasadas.length){ html+=`<div class="grupo-h vermelho">🔴 Ficaram para trás (meses anteriores)</div>`+atrasadas.map(x=>linha(x,'atrasadas')).join(''); }
+    if(aPagar.length){ html+=`<div class="grupo-h amarelo">🟡 A pagar este mês</div>`+aPagar.map(x=>linha(x,'aPagar')).join(''); }
+    if(pagas.length){ html+=`<div class="grupo-h verde">✅ Já pagas este mês</div>`+pagas.map(x=>linha(x,'pagas')).join(''); }
+    wrap.innerHTML=html;
+    wrap.querySelectorAll('[data-act]').forEach(b=>{
+      b.onclick=()=>{
+        const act=b.dataset.act, pk=b.dataset.pk;
+        if(pk==='parcela'){
+          const c=dados.contas.find(x=>x.id===Number(b.dataset.c)); if(!c) return;
+          const p=c.parcelas.find(x=>x.n===Number(b.dataset.pn)); if(!p) return;
+          if(act==='pagar'){ p.pago=true; p.pagoEm=hojeISO(); } else { p.pago=false; p.pagoEm=null; }
+        } else {
+          const f=dados.fixas.find(x=>x.id===Number(b.dataset.f)); if(!f) return;
+          const mes=b.dataset.mes;
+          if(act==='pagar'){
+            const entrada=prompt(`Valor pago de "${f.descricao}" (${nomeMes(mes)}) em R$:`, String(f.valor));
+            if(entrada===null) return;
+            let v=parseFloat(String(entrada).replace('.','').replace(',','.')); if(isNaN(v)||v<=0) v=f.valor;
+            f.pagamentos[mes]={data:hojeISO(),valor:v};
+          } else { delete f.pagamentos[mes]; }
+        }
+        salvar(); atualizarTudo();
+      };
+    });
   }
 
   // ===== Contas fixas =====
@@ -436,7 +523,7 @@
   document.getElementById('formFixa').onsubmit=(e)=>{
     e.preventDefault(); const valor=parseFloat(document.getElementById('fx-valor').value); const dia=parseInt(document.getElementById('fx-dia').value,10);
     if(!(valor>0)||!(dia>=1&&dia<=31)) return;
-    dados.fixas.push({ id:Date.now(), descricao:document.getElementById('fx-descricao').value.trim(), valor, categoria:document.getElementById('fx-categoria').value.trim()||'Contas fixas', dia, pagamentos:{} });
+    dados.fixas.push({ id:Date.now(), descricao:document.getElementById('fx-descricao').value.trim(), valor, categoria:document.getElementById('fx-categoria').value.trim()||'Contas fixas', dia, desde:mesDe(hojeISO()), pagamentos:{} });
     salvar(); e.target.reset(); atualizarTudo();
   };
   document.getElementById('formConta').onsubmit=(e)=>{
